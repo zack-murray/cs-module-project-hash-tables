@@ -21,8 +21,12 @@ class HashTable:
     """
 
     def __init__(self, capacity):
-        # Your code here
-
+        if capacity < MIN_CAPACITY:
+            self.capacity = MIN_CAPACITY
+        else:
+            self.capacity = capacity
+        self.key_count = 0
+        self.storage = [None] * capacity
 
     def get_num_slots(self):
         """
@@ -34,7 +38,7 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        return self.capacity
 
 
     def get_load_factor(self):
@@ -43,7 +47,8 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        # The load factor is the number of keys stored in the hash table divided by the capacity
+        return self.key_count / self.capacity
 
 
     def fnv1(self, key):
@@ -62,7 +67,11 @@ class HashTable:
 
         Implement this, and/or FNV-1.
         """
-        # Your code here
+        hash = 5381
+        for character in key:
+            hash = (hash * 33) + ord(character)
+
+        return hash
 
 
     def hash_index(self, key):
@@ -81,7 +90,33 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        # Instantiate index key  
+        index = self.hash_index(key) 
+        if self.storage[index] is None:
+            # If list is empty, add entry
+            self.storage[index] = HashTableEntry(key, value)
+            # Increase the key count
+            self.key_count += 1
+            # If load factor > 0.7
+            if self.get_load_factor() > 0.7:
+                # Double the size of the hash table 
+                self.resize(self.capacity * 2)
+        else: 
+            # Set current pointer to index key 
+            cur = self.storage[index]
+            while cur is not None:
+                # Check node for same key
+                if cur.key == key:
+                    # If same key, replace with new value
+                    cur.value = value
+                    return
+                # If node after pointer is none
+                if cur.next is None:
+                    # Break so position isn't lost 
+                    break
+                cur = cur.next
+            # Node not found, append to the end of the list
+            cur.next = HashTableEntry(key, value)
 
 
     def delete(self, key):
@@ -92,7 +127,41 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        index = self.hash_index(key)
+        # If list is empty 
+        if self.storage[index] is None:
+            return (f'Warning, key not found in the hash table')
+        else:
+            # If found and only entry
+            if self.storage[index].next is None:
+                # Effectively delete it
+                self.storage[index] = None
+                # Decrease the key count
+                self.key_count -= 1 
+                return
+            else:
+                # Set current pointer
+                cur = self.storage[index]
+                # If current node is the key
+                if cur.key == key:
+                    # Remove it and decrease key count
+                    self.storage[index] = self.storage[index].next
+                    self.key_count -= 1
+                    return 
+                # If current node isn't key and next node isn't None
+                while cur.next is not None:
+                    # Traverse down list and check if next node = key 
+                    if cur.next.key == key:
+                        # Remove it and decrease key count
+                        cur.next = cur.next.next
+                        self.key_count -= 1
+                        return
+                    # If still not found, keep traversing
+                    cur = cur.next
+                # Key not found at location
+                return (f'Warning, key not found at location')
+                
+
 
 
     def get(self, key):
@@ -103,8 +172,23 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
-
+        index = self.hash_index(key)
+        # If hash table is empty
+        if self.storage[index] is None:
+            return None
+        else:
+            # Set current pointer
+            cur = self.storage[index]
+            # Start traversing
+            while cur is not None:
+                # Check each node's key as you traverse
+                if cur.key == key:
+                    return cur.value
+                # If still not found, keep traversing
+                cur = cur.next
+            # Return None if key is not found
+            return None
+        
 
     def resize(self, new_capacity):
         """
@@ -113,7 +197,17 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        # Instantiate old storage as a copy of itself
+        old_storage = self.storage.copy()
+        # Set new capacity, key count, storage
+        self.capacity = new_capacity
+        self.key_count = 0
+        self.storage = [None] * self.capacity
+        # Rehash old storage into new hash table
+        for node in old_storage:
+            while node is not None:
+                self.put(node.key, node.value)
+                node = node.next
 
 
 
